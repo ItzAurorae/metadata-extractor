@@ -4,76 +4,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Metadata Extractor</title>
-    <link rel="stylesheet" href="static/css/style.css">
     <style>
+        /* Simple styling for the page */
         body {
-    font-family: Arial, sans-serif;
-    background-color: #121212;
-    color: white;
-    text-align: center;
-}
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
 
-.container {
-    width: 50%;
-    margin: auto;
-    padding: 20px;
-    background: #1e1e1e;
-    border-radius: 10px;
-}
+        .container {
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            width: 100%;
+            max-width: 600px;
+        }
 
-#drop-area {
-    border: 2px dashed #555;
-    padding: 20px;
-    margin: 10px;
-    cursor: pointer;
-}
+        #drop-area {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
 
-input[type="file"] {
-    display: none;
-}
+        #drop-area p {
+            margin: 0;
+        }
 
-label {
-    display: block;
-    padding: 10px;
-    background: #444;
-    cursor: pointer;
-    border-radius: 5px;
-}
+        input[type="file"] {
+            display: none;
+        }
 
-button {
-    background: #2196F3;
-    border: none;
-    color: white;
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 5px;
-    margin-top: 10px;
-}
+        label {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
 
-button:hover {
-    background: #1976D2;
-}
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
 
-pre {
-    text-align: left;
-    background: #333;
-    padding: 10px;
-    border-radius: 5px;
-    overflow-x: auto;
-}
+        #result {
+            margin-top: 20px;
+        }
 
+        #metadataJson {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+
+        #uploadedImage {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Image Metadata Extractor</h2>
-
+        
         <div id="drop-area" ondragover="event.preventDefault();" ondrop="handleDrop(event)">
             <p>Drag & Drop an Image or Click to Select</p>
             <input type="file" name="file" id="fileInput" onchange="updateFileName()" />
-            <label for="fileInput" id="fileLabel">Choose File</label>
         </div>
-
+        
         <button id="uploadBtn">Upload</button>
 
         <div id="result">
@@ -83,55 +96,5 @@ pre {
             <pre id="metadataJson"></pre>
         </div>
     </div>
-
-    <script>
-        function updateFileName() {
-            var input = document.getElementById("fileInput");
-            var label = document.getElementById("fileLabel");
-            if (input.files.length > 0) {
-                label.textContent = input.files[0].name;
-            } else {
-                label.textContent = "Choose File";
-            }
-        }
-
-        function handleDrop(event) {
-            event.preventDefault();
-            var files = event.dataTransfer.files;
-            if (files.length > 0) {
-                document.getElementById("fileInput").files = files;
-                updateFileName();
-            }
-        }
-
-        document.getElementById("uploadBtn").addEventListener("click", function () {
-            var formData = new FormData();
-            var fileInput = document.getElementById("fileInput").files[0];
-
-            if (!fileInput) {
-                alert("Please select a file!");
-                return;
-            }
-
-            formData.append("file", fileInput);
-
-            fetch("/upload", {
-                method: "POST",
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                } else {
-                    document.getElementById("fileName").textContent = "Uploaded File: " + data.filename;
-                    document.getElementById("uploadedImage").src = "/static/uploads/" + data.filename;
-                    document.getElementById("uploadedImage").style.display = "block";
-                    document.getElementById("metadataJson").textContent = JSON.stringify(data.metadata, null, 4);
-                }
-            })
-            .catch(error => console.error("Error:", error));
-        });
-    </script>
 </body>
 </html>

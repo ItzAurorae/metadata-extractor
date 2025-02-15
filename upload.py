@@ -73,5 +73,5 @@ def upload_file():
 
     return jsonify({"error": "Invalid file type. Please upload an image."})
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)

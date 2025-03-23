@@ -63,12 +63,12 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded."})
+        return jsonify({"error": "No file uploaded."}), 400  # Added 400 status for bad request
 
     file = request.files['file']
 
     if file.filename == '':
-        return jsonify({"error": "No file selected."})
+        return jsonify({"error": "No file selected."}), 400
 
     if file and allowed_file(file.filename):
         filename = file.filename
@@ -77,9 +77,10 @@ def upload_file():
 
         metadata = extract_metadata(filepath)
 
-        return jsonify({"filename": filename, "metadata": metadata})
+        return jsonify({"filename": filename, "metadata": metadata}), 200
 
-    return jsonify({"error": "Invalid file type. Please upload an image."})
+    return jsonify({"error": "Invalid file type. Please upload an image."}), 400  # 400 for invalid file type
+
 
 if __name__ == "__main__":
     app.run(debug=True)

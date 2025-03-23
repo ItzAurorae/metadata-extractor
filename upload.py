@@ -1,8 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from PIL import Image, ExifTags
-import os
 import piexif
-import json
+import os
 
 app = Flask(__name__)
 
@@ -19,7 +18,10 @@ def extract_metadata(image_path):
     metadata = {}
 
     try:
+        # Open the image file
         image = Image.open(image_path)
+
+        # General image information
         metadata["Format"] = image.format
         metadata["Mode"] = image.mode
         metadata["Size"] = f"{image.width}x{image.height} pixels"
@@ -39,13 +41,13 @@ def extract_metadata(image_path):
         except Exception as exif_error:
             metadata["EXIF"] = f"Error reading EXIF: {str(exif_error)}"
 
-        # Extract ICC profile
+        # Extract ICC profile if available
         if "icc_profile" in image.info:
             metadata["ICC Profile"] = "Available"
         else:
             metadata["ICC Profile"] = "Not Available"
 
-        # Extract XMP metadata
+        # Extract XMP metadata if available
         if "XML:com.adobe.xmp" in image.info:
             metadata["XMP"] = image.info["XML:com.adobe.xmp"]
 

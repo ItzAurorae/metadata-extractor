@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Metadata Extractor</title>
     <style>
+        /* Simple styling for the page */
         body {
             font-family: Arial, sans-serif;
             background-color: #f7f7f7;
@@ -30,6 +31,10 @@
             text-align: center;
             cursor: pointer;
             margin-bottom: 20px;
+        }
+
+        #drop-area p {
+            margin: 0;
         }
 
         input[type="file"] {
@@ -70,8 +75,6 @@
 
         #uploadedImage {
             margin-top: 20px;
-            width: 300px;
-            height: auto;
         }
     </style>
 </head>
@@ -79,16 +82,17 @@
     <div class="container">
         <h2>Image Metadata Extractor</h2>
         
-        <div id="drop-area" ondragover="event.preventDefault();" ondrop="handleDrop(event)">
+        <!-- Drag-and-drop area (now supports click and drag) -->
+        <div id="drop-area" ondragover="event.preventDefault();" ondrop="handleDrop(event)" onclick="triggerFileInput()">
             <p>Drag & Drop an Image or Click to Select</p>
             <input type="file" name="file" id="fileInput" onchange="updateFileName()" />
         </div>
-        
+
         <button id="uploadBtn" onclick="uploadImage()">Upload</button>
 
         <div id="result">
             <h3 id="fileName"></h3>
-            <img id="uploadedImage" style="display: none;">
+            <img id="uploadedImage" style="display: none;" width="300">
             <h4>Metadata:</h4>
             <pre id="metadataJson"></pre>
         </div>
@@ -97,72 +101,78 @@
     <script>
         let selectedFile = null;
 
-        // Update file name when a file is selected
+        // Handle the file drop
+        function handleDrop(event) {
+            event.preventDefault(); // Prevent default behavior (open as link for some browsers)
+            const file = event.dataTransfer.files[0];
+            if (file && file.type.startsWith("image/")) {
+                selectedFile = file;
+                displayFile(file);
+            } else {
+                alert("Please upload a valid image file.");
+            }
+        }
+
+        // Trigger file input when click on the drop area
+        function triggerFileInput() {
+            document.getElementById('fileInput').click();
+        }
+
+        // Update the selected file on file input change
         function updateFileName() {
             const fileInput = document.getElementById('fileInput');
             selectedFile = fileInput.files[0];
-            if (selectedFile) {
-                document.getElementById('fileName').textContent = selectedFile.name;
-                displayImagePreview();
+            if (selectedFile && selectedFile.type.startsWith("image/")) {
+                displayFile(selectedFile);
+            } else {
+                alert("Please select a valid image file.");
             }
         }
 
-        // Handle drag-and-drop functionality
-        function handleDrop(event) {
-            event.preventDefault();
-            const files = event.dataTransfer.files;
-            if (files.length > 0) {
-                selectedFile = files[0];
-                document.getElementById('fileName').textContent = selectedFile.name;
-                displayImagePreview();
-            }
+        // Display the selected file name and image preview
+        function displayFile(file) {
+            const fileName = document.getElementById('fileName');
+            const uploadedImage = document.getElementById('uploadedImage');
+            
+            fileName.textContent = file.name;
+            uploadedImage.style.display = 'block';
+            uploadedImage.src = URL.createObjectURL(file);
         }
 
-        // Display image preview
-        function displayImagePreview() {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = document.getElementById('uploadedImage');
-                img.style.display = 'block';
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(selectedFile);
-        }
-
+        // Upload the selected image
         function uploadImage() {
-    if (!selectedFile) {
-        alert('Please select a file first!');
-        return;
-    }
+            if (!selectedFile) {
+                alert('Please select a file first!');
+                return;
+            }
 
-    const formData = new FormData();
-    formData.append('file', selectedFile);
+            const formData = new FormData();
+            formData.append('file', selectedFile);
 
-    fetch('http://127.0.0.1:5000/upload', {  // Change to your local Flask server address
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Error uploading image');
+            fetch('http://127.0.0.1:5000/upload', {  // Adjust the URL if necessary
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error uploading image');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    displayMetadata(data.metadata);
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading image:', error);
+                alert('Failed to upload image. Check the console for more details.');
+            });
         }
-        return response.json();
-    })
-    .then(data => {
-        if (data.error) {
-            alert(data.error);
-        } else {
-            displayMetadata(data.metadata);
-        }
-    })
-    .catch(error => {
-        console.error('Error uploading image:', error);
-        alert('Failed to upload image. Check the console for more details.');
-    });
-}
 
-
-        // Display metadata in the page
+        // Display the metadata of the image
         function displayMetadata(metadata) {
             const metadataJson = document.getElementById('metadataJson');
             metadataJson.textContent = JSON.stringify(metadata, null, 2);

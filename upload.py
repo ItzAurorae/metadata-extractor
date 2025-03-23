@@ -63,7 +63,7 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded."}), 400  # Added 400 status for bad request
+        return jsonify({"error": "No file uploaded."}), 400  # 400 for bad request
 
     file = request.files['file']
 
@@ -79,7 +79,7 @@ def upload_file():
 
         return jsonify({"filename": filename, "metadata": metadata}), 200
 
-    return jsonify({"error": "Invalid file type. Please upload an image."}), 400  # 400 for invalid file type
+    return jsonify({"error": "Invalid file type. Please upload an image."}), 400
 
 
 if __name__ == "__main__":

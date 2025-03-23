@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, jsonify
 from PIL import Image, ExifTags
-import piexif
 import os
 
 app = Flask(__name__)
@@ -16,44 +15,24 @@ def allowed_file(filename):
 
 def extract_metadata(image_path):
     metadata = {}
-
     try:
-        # Open the image file
         image = Image.open(image_path)
-
-        # General image information
         metadata["Format"] = image.format
         metadata["Mode"] = image.mode
         metadata["Size"] = f"{image.width}x{image.height} pixels"
-        metadata["DPI"] = image.info.get("dpi", "Unknown")  # Default to "Unknown" if DPI is not available
+        metadata["DPI"] = image.info.get("dpi", "Unknown")
         metadata["Bit Depth"] = image.mode
-        metadata["Compression"] = image.info.get("compression", "None")  # Default to "None" if compression is not available
+        metadata["Compression"] = image.info.get("compression", "None")
 
-        # Extract EXIF metadata using piexif (more robust than _getexif)
-        try:
-            exif_dict = piexif.load(image_path)
-            if exif_dict:
-                metadata["EXIF"] = {}
-                for ifd in exif_dict:
-                    for tag, value in exif_dict[ifd].items():
-                        tag_name = ExifTags.TAGS.get(tag, tag)
-                        metadata["EXIF"][tag_name] = value
-        except Exception as exif_error:
-            metadata["EXIF"] = f"Error reading EXIF: {str(exif_error)}"
-
-        # Extract ICC profile if available
-        if "icc_profile" in image.info:
-            metadata["ICC Profile"] = "Available"
-        else:
-            metadata["ICC Profile"] = "Not Available"
-
-        # Extract XMP metadata if available
-        if "XML:com.adobe.xmp" in image.info:
-            metadata["XMP"] = image.info["XML:com.adobe.xmp"]
-
+        # Extract EXIF metadata
+        exif_data = image._getexif()
+        if exif_data:
+            metadata["EXIF"] = {}
+            for tag, value in exif_data.items():
+                tag_name = ExifTags.TAGS.get(tag, tag)
+                metadata["EXIF"][tag_name] = value
     except Exception as e:
         metadata["Error"] = str(e)
-
     return metadata
 
 @app.route('/')
@@ -63,10 +42,9 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded."}), 400  # 400 for bad request
+        return jsonify({"error": "No file uploaded."}), 400
 
     file = request.files['file']
-
     if file.filename == '':
         return jsonify({"error": "No file selected."}), 400
 
@@ -80,7 +58,6 @@ def upload_file():
         return jsonify({"filename": filename, "metadata": metadata}), 200
 
     return jsonify({"error": "Invalid file type. Please upload an image."}), 400
-
 
 if __name__ == "__main__":
     app.run(debug=True)

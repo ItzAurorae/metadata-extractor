@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Metadata Extractor</title>
     <style>
-        /* Simple styling for the page */
         body {
             font-family: Arial, sans-serif;
             background-color: #f7f7f7;
@@ -31,10 +30,6 @@
             text-align: center;
             cursor: pointer;
             margin-bottom: 20px;
-        }
-
-        #drop-area p {
-            margin: 0;
         }
 
         input[type="file"] {
@@ -75,6 +70,8 @@
 
         #uploadedImage {
             margin-top: 20px;
+            width: 300px;
+            height: auto;
         }
     </style>
 </head>
@@ -87,14 +84,83 @@
             <input type="file" name="file" id="fileInput" onchange="updateFileName()" />
         </div>
         
-        <button id="uploadBtn">Upload</button>
+        <button id="uploadBtn" onclick="uploadImage()">Upload</button>
 
         <div id="result">
             <h3 id="fileName"></h3>
-            <img id="uploadedImage" style="display: none;" width="300">
+            <img id="uploadedImage" style="display: none;">
             <h4>Metadata:</h4>
             <pre id="metadataJson"></pre>
         </div>
     </div>
+
+    <script>
+        let selectedFile = null;
+
+        // Update file name when a file is selected
+        function updateFileName() {
+            const fileInput = document.getElementById('fileInput');
+            selectedFile = fileInput.files[0];
+            if (selectedFile) {
+                document.getElementById('fileName').textContent = selectedFile.name;
+            }
+        }
+
+        // Handle drag-and-drop functionality
+        function handleDrop(event) {
+            event.preventDefault();
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                selectedFile = files[0];
+                document.getElementById('fileName').textContent = selectedFile.name;
+                displayImagePreview();
+            }
+        }
+
+        // Display image preview
+        function displayImagePreview() {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('uploadedImage');
+                img.style.display = 'block';
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(selectedFile);
+        }
+
+        // Upload image and fetch metadata
+        function uploadImage() {
+            if (!selectedFile) {
+                alert('Please select a file first!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    displayMetadata(data.metadata);
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading image:', error);
+                alert('Failed to upload image.');
+            });
+        }
+
+        // Display metadata in the page
+        function displayMetadata(metadata) {
+            const metadataJson = document.getElementById('metadataJson');
+            metadataJson.textContent = JSON.stringify(metadata, null, 2);
+        }
+    </script>
 </body>
 </html>

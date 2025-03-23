@@ -129,33 +129,38 @@
             reader.readAsDataURL(selectedFile);
         }
 
-        // Upload image and fetch metadata
         function uploadImage() {
-            if (!selectedFile) {
-                alert('Please select a file first!');
-                return;
-            }
+    if (!selectedFile) {
+        alert('Please select a file first!');
+        return;
+    }
 
-            const formData = new FormData();
-            formData.append('file', selectedFile);
+    const formData = new FormData();
+    formData.append('file', selectedFile);
 
-            fetch('/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                } else {
-                    displayMetadata(data.metadata);
-                }
-            })
-            .catch(error => {
-                console.error('Error uploading image:', error);
-                alert('Failed to upload image.');
-            });
+    fetch('/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error uploading image');
         }
+        return response.json();
+    })
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+        } else {
+            displayMetadata(data.metadata);
+        }
+    })
+    .catch(error => {
+        console.error('Error uploading image:', error);
+        alert('Failed to upload image. Check the console for more details.');
+    });
+}
+
 
         // Display metadata in the page
         function displayMetadata(metadata) {

@@ -138,7 +138,7 @@
     const formData = new FormData();
     formData.append('file', selectedFile);
 
-    fetch('/upload', {
+    fetch('http://127.0.0.1:5000/upload', {  // Change to your local Flask server address
         method: 'POST',
         body: formData
     })

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Metadata Extractor</title>
     <style>
-        /* Simple styling for the page */
+        /* Styling for the page */
         body {
             font-family: Arial, sans-serif;
             background-color: #f7f7f7;
@@ -31,10 +31,6 @@
             text-align: center;
             cursor: pointer;
             margin-bottom: 20px;
-        }
-
-        #drop-area p {
-            margin: 0;
         }
 
         input[type="file"] {
@@ -82,12 +78,11 @@
     <div class="container">
         <h2>Image Metadata Extractor</h2>
         
-        <!-- Drag-and-drop area (now supports click and drag) -->
-        <div id="drop-area" ondragover="event.preventDefault();" ondrop="handleDrop(event)" onclick="triggerFileInput()">
+        <div id="drop-area" ondragover="event.preventDefault();" ondrop="handleDrop(event)">
             <p>Drag & Drop an Image or Click to Select</p>
             <input type="file" name="file" id="fileInput" onchange="updateFileName()" />
         </div>
-
+        
         <button id="uploadBtn" onclick="uploadImage()">Upload</button>
 
         <div id="result">
@@ -98,84 +93,65 @@
         </div>
     </div>
 
+    <!-- Piexif.js for EXIF Data -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/piexifjs/1.0.0/piexif.js"></script>
     <script>
         let selectedFile = null;
 
-        // Handle the file drop
-        function handleDrop(event) {
-            event.preventDefault(); // Prevent default behavior (open as link for some browsers)
-            const file = event.dataTransfer.files[0];
-            if (file && file.type.startsWith("image/")) {
-                selectedFile = file;
-                displayFile(file);
-            } else {
-                alert("Please upload a valid image file.");
-            }
-        }
-
-        // Trigger file input when click on the drop area
-        function triggerFileInput() {
-            document.getElementById('fileInput').click();
-        }
-
-        // Update the selected file on file input change
+        // Handle file input change
         function updateFileName() {
             const fileInput = document.getElementById('fileInput');
             selectedFile = fileInput.files[0];
-            if (selectedFile && selectedFile.type.startsWith("image/")) {
-                displayFile(selectedFile);
-            } else {
-                alert("Please select a valid image file.");
-            }
+            const fileName = selectedFile.name;
+            document.getElementById('fileName').innerText = `File: ${fileName}`;
+            document.getElementById('uploadedImage').src = URL.createObjectURL(selectedFile);
+            document.getElementById('uploadedImage').style.display = 'block';
         }
 
-        // Display the selected file name and image preview
-        function displayFile(file) {
-            const fileName = document.getElementById('fileName');
-            const uploadedImage = document.getElementById('uploadedImage');
-            
-            fileName.textContent = file.name;
-            uploadedImage.style.display = 'block';
-            uploadedImage.src = URL.createObjectURL(file);
+        // Handle drag-and-drop area
+        function handleDrop(event) {
+            event.preventDefault();
+            const file = event.dataTransfer.files[0];
+            selectedFile = file;
+            document.getElementById('fileName').innerText = `File: ${file.name}`;
+            document.getElementById('uploadedImage').src = URL.createObjectURL(file);
+            document.getElementById('uploadedImage').style.display = 'block';
         }
 
-        // Upload the selected image
+        // Upload and extract metadata
         function uploadImage() {
             if (!selectedFile) {
-                alert('Please select a file first!');
+                alert('Please select an image.');
                 return;
             }
 
-            const formData = new FormData();
-            formData.append('file', selectedFile);
-
-            fetch('http://127.0.0.1:5000/upload', {  // Adjust the URL if necessary
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Error uploading image');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                } else {
-                    displayMetadata(data.metadata);
-                }
-            })
-            .catch(error => {
-                console.error('Error uploading image:', error);
-                alert('Failed to upload image. Check the console for more details.');
-            });
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const img = new Image();
+                img.onload = function () {
+                    const metadata = extractImageMetadata(img);
+                    document.getElementById('metadataJson').innerText = JSON.stringify(metadata, null, 2);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(selectedFile);
         }
 
-        // Display the metadata of the image
-        function displayMetadata(metadata) {
-            const metadataJson = document.getElementById('metadataJson');
-            metadataJson.textContent = JSON.stringify(metadata, null, 2);
+        // Extract image metadata
+        function extractImageMetadata(img) {
+            const metadata = {
+                Format: img.src.split(';')[0].split(':')[1], // Extract image format from data URL
+                Width: img.width,
+                Height: img.height,
+            };
+
+            // Extract EXIF metadata if available
+            const exifData = piexif.load(img.src);
+            if (exifData) {
+                metadata.EXIF = exifData;
+            }
+
+            return metadata;
         }
     </script>
 </body>
